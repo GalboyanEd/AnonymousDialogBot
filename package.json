@@ -1,0 +1,23 @@
+{
+  "name": "anonymous_dialog_bot",
+  "version": "1.0.0",
+  "description": "A bot that make you chat with unknown people.",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GalboyanEd/AnonymousDialogBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GalboyanEd/AnonymousDialogBot/issues"
+  },
+  "homepage": "https://github.com/GalboyanEd/AnonymousDialogBot#readme",
+  
+  "dependencies" :  {
+    "node-telegram-bot-api" : ""
+  }
+}
