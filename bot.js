@@ -31,14 +31,21 @@ bot.on("callback_query", function(callbackQuery) {
     var oppositeQ = isMale ? femaleQ : maleQ;
     var currentQ  = isMale ? maleQ : femaleQ;
 
+    var _waitMessage = "Now there are no people we can connect you to. We'll inform you ASAP.";
+
 	if(oppositeQ.size() == 0){
 		currentQ.push(callbackQuery.message.chat.id);
-		bot.sendMessage(callbackQuery.message.chat.id,"Now there are no people we can connect you to. We'll inform you ASAP.");
+		bot.sendMessage(callbackQuery.message.chat.id,_waitMessage);
 		return;
 	}
 
 	var currentChatId = (callbackQuery.message.chat.id).toString();
 	var partnerChatId = (oppositeQ.pop()).toString();
+
+	if(currentChatId == partnerChatId){
+		bot.sendMessage(callbackQuery.message.chat.id,_waitMessage);
+		return;
+	}
 
 	connections[currentChatId] = partnerChatId;		
 	connections[partnerChatId] = currentChatId;		
@@ -54,4 +61,4 @@ bot.on('message', function(msg, match) {
 	if(connections[currentChatId] != undefined){
 		bot.sendMessage(connections[currentChatId], msg.text);
 	};
-});
+});	
