@@ -1,10 +1,4 @@
 var TelegramBot = require('node-telegram-bot-api');
-const EventEmitter = require('events');
-
-class MyEmitter extends EventEmitter {}
-
-const myEmitter = new MyEmitter();
-
 var Queue = require('./queue');
 var token = require('./config').token;
 
@@ -28,10 +22,6 @@ bot.onText(/\/start/, function(msg, match) {
 
   var keyboard = {reply_markup: JSON.parse(keyboardStr)};
   bot.sendMessage(msg.chat.id, text, keyboard);
-});
-
-myEmitter.on("my_callback_query", function(callbackQuery) {
-	bot.emit('callback_query', callbackQuery)
 });
 
 bot.on("callback_query", function(callbackQuery) {
@@ -59,7 +49,11 @@ bot.on("callback_query", function(callbackQuery) {
 	connections[currentChatId] = {"partner": partnerChatId, "isMale": !isMale};		
 	connections[partnerChatId] = {"partner": currentChatId, "isMale": isMale};		
 	
-	var _message = "We've found a partner for you. Say hi to your parnter.";
+	var _message = "We've found someone for you. Say hi to your parnter.";
+
+	bot.sendMessage(currentChatId, _message);
+	bot.sendMessage(partnerChatId, _message);
+
 	var option = {
         "parse_mode": "Markdown",
         "reply_markup": {
@@ -70,8 +64,10 @@ bot.on("callback_query", function(callbackQuery) {
         }
     };
 
-	bot.sendMessage(currentChatId, _message,option);
-	bot.sendMessage(partnerChatId, _message,option);
+    _message = "You can always change your partner by typing /changePartner";
+
+	bot.sendMessage(currentChatId, _message, option);
+	bot.sendMessage(partnerChatId, _message, option);
 });
 
 bot.on('message', function(msg, match) {
@@ -125,6 +121,6 @@ bot.onText(/\/changePartner/, function(msg, match) {
 	currentCall.message = {"chat" : {"id" : currentChatId}};
 	partnerCall.message = {"chat" : {"id" : partnerChatId}};
 
-	setTimeout(myEmitter.emit, 1000, 'my_callback_query', currentCall);
-	setTimeout(myEmitter.emit, 2000, 'my_callback_query', partnerCall);
+	setTimeout(bot.emit, 1000, 'callback_query', currentCall);
+	setTimeout(bot.emit, 2000, 'callback_query', partnerCall);
 })
