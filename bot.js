@@ -1,4 +1,10 @@
 var TelegramBot = require('node-telegram-bot-api');
+const EventEmitter = require('events');
+
+class MyEmitter extends EventEmitter {}
+
+const myEmitter = new MyEmitter();
+
 var Queue = require('./queue');
 var token = require('./config').token;
 
@@ -24,11 +30,11 @@ bot.onText(/\/start/, function(msg, match) {
   bot.sendMessage(msg.chat.id, text, keyboard);
 });
 
-bot.on("callback_query", function(callbackQuery) {
-	bot.emit('my_callback_query', callbackQuery)
+myEmitter.on("my_callback_query", function(callbackQuery) {
+	bot.emit('callback_query', callbackQuery)
 });
 
-bot.on("my_callback_query", function(callbackQuery) {
+bot.on("callback_query", function(callbackQuery) {
     var isMale = (callbackQuery.data == '_male') ? true : false;
 
     var oppositeQ = isMale ? femaleQ : maleQ;
@@ -108,7 +114,7 @@ bot.onText(/\/changePartner/, function(msg, match) {
 	} else {
 		partnerCall.data = '_female'
 	}
-	
+
 	var currentCall = {};
 	if(currentChat.isMale){
 		currentCall.data = '_male';
@@ -117,8 +123,8 @@ bot.onText(/\/changePartner/, function(msg, match) {
 	}
 
 	currentCall.message = {"chat" : {"id" : currentChatId}};
-	partnerCall.message = {"chat" : {"id" : currentChatId}};
+	partnerCall.message = {"chat" : {"id" : partnerChatId}};
 
-	bot.emit('my_callback_query', currentCall);
-	bot.emit('my_callback_query', partnerCall);
+	setTimeout(myEmitter.emit, 1000, 'my_callback_query', currentCall);
+	setTimeout(myEmitter.emit, 2000, 'my_callback_query', partnerCall);
 })
