@@ -47,18 +47,57 @@ bot.on("callback_query", function(callbackQuery) {
 		return;
 	}
 
-	connections[currentChatId] = partnerChatId;		
-	connections[partnerChatId] = currentChatId;		
+	connections[currentChatId] = {"partner": partnerChatId, "isMale": !isMale};		
+	connections[partnerChatId] = {"partner": currentChatId, "isMale": isMale};		
 	
 	var _message = "We've found a partner for you. Say hi to your parnter.";
+	var option = {
+        "parse_mode": "Markdown",
+        "reply_markup": {
+            "one_time_keyboard": true,
+            "keyboard": [[{
+                text: "/changePartner"
+            }]]
+        }
+    };
 
-	bot.sendMessage(currentChatId, _message);
-	bot.sendMessage(partnerChatId, _message);
+	bot.sendMessage(currentChatId, _message,option);
+	bot.sendMessage(partnerChatId, _message,option);
 });
 
 bot.on('message', function(msg, match) {
+	if((msg.text).indexOf('/') == 0){
+		return;
+	}
+
 	var currentChatId = (msg.chat.id).toString();
 	if(connections[currentChatId] != undefined){
-		bot.sendMessage(connections[currentChatId], msg.text);
+		bot.sendMessage(connections[currentChatId].partner, msg.text);
 	};
 });	
+
+
+bot.onText(/\/changePartner/, function(msg, match) {
+	var currentChatId = (msg.chat.id).toString();
+
+	var partnerChat = connections[currentChatId];
+	var currentChat = connections[partnerChat.partner];
+
+	var partnerChatId = partnerChat.partner;
+
+	connections[currentChatId] = undefined;
+	connections[partnerChatId] = undefined;
+
+	if(currentChat.isMale == true)	{
+		maleQ.push(currentChatId);
+		femaleQ.push(partnerChatId);
+	} else {
+		maleQ.push(partnerChatId);
+		femaleQ.push(currentChatId);
+	}
+
+	var startMessage = "Type /start to start again."
+
+	bot.sendMessage(currentChatId, "We've blocked your partner. " + startMessage);
+	bot.sendMessage(partnerChatId, "Your partner blocked you. " + startMessage);
+})
