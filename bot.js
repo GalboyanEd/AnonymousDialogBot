@@ -25,7 +25,10 @@ bot.onText(/\/start/, function(msg, match) {
 });
 
 bot.on("callback_query", function(callbackQuery) {
-    //bot.sendMessage(callbackQuery.message.chat.id, callbackQuery.data);
+	bot.emit('my_callback_query', callbackQuery)
+});
+
+bot.on("my_callback_query", function(callbackQuery) {
     var isMale = (callbackQuery.data == '_male') ? true : false;
 
     var oppositeQ = isMale ? femaleQ : maleQ;
@@ -96,8 +99,26 @@ bot.onText(/\/changePartner/, function(msg, match) {
 		femaleQ.push(currentChatId);
 	}
 
-	var startMessage = "Type /start to start again."
+	bot.sendMessage(currentChatId, "We've blocked your partner.");
+	bot.sendMessage(partnerChatId, "Your partner blocked you.");
 
-	bot.sendMessage(currentChatId, "We've blocked your partner. " + startMessage);
-	bot.sendMessage(partnerChatId, "Your partner blocked you. " + startMessage);
+	var partnerCall = {};
+	if(partnerChat.isMale){
+		partnerCall.data = '_male';
+	} else {
+		partnerCall.data = '_female'
+	}
+	
+	var currentCall = {};
+	if(currentChat.isMale){
+		currentCall.data = '_male';
+	} else {
+		currentCall.data = '_female'
+	}
+
+	currentCall.message = {"chat" : {"id" : currentChatId}};
+	partnerCall.message = {"chat" : {"id" : currentChatId}};
+
+	bot.emit('my_callback_query', currentCall);
+	bot.emit('my_callback_query', partnerCall);
 })
