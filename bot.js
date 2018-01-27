@@ -52,17 +52,19 @@ bot.on('message', function(msg, match) {
 });	
 
 
-bot.onText(/\/changePartner/, function(msg, match) {
+bot.onText(/\/endChat/, function(msg, match) {
 	var currentChatId = msg.chat.id;
 	var partnerChatId = connections[currentChatId];
 
 	connections[currentChatId] = undefined;
 	connections[partnerChatId] = undefined;
 
-	bot.sendMessage(currentChatId, "We've blocked your partner.");
-	bot.sendMessage(partnerChatId, "Your partner blocked you.");
+	var _message = 'The chat is ended.';
 
-	var _message = 'Type /start to find a partner.';
+	bot.sendMessage(currentChatId, _message);
+	bot.sendMessage(partnerChatId, _message);
+
+	_message = 'Type /start to find a partner.';
 
 	bot.sendMessage(currentChatId, _message);
 	bot.sendMessage(partnerChatId, _message);
@@ -97,7 +99,7 @@ function findPartner(chatID){
 	connections[currentChatId] = partnerChatId;		
 	connections[partnerChatId] = currentChatId;		
 	
-	var _message = "We've found someone for you. Say hi to your parnter.";
+	var _message = "We've found someone for you. Say hi to " + ((genders[partnerChatId]) ? 'him.' : 'her.');
 
 	bot.sendMessage(currentChatId, _message);
 	bot.sendMessage(partnerChatId, _message);
@@ -107,12 +109,12 @@ function findPartner(chatID){
 				"reply_markup": {
 						"one_time_keyboard": true,
 						"keyboard": [[{
-								text: "/changePartner"
+								text: "/endChat"
 						}]]
 				}
 		};
 
-		_message = "You can always change your partner by typing /changePartner";
+		_message = "Type /endChat to end this chat.";
 
 	bot.sendMessage(currentChatId, _message, option);
 	bot.sendMessage(partnerChatId, _message, option);
