@@ -11,15 +11,15 @@ var genders = {};
 var bot = new TelegramBot(token, {polling: true});
 
 bot.onText(/\/start/, function(msg, match) {
-	if(includes.inAnObject(msg.chat.id, genders) == true) {
-		findPartner(msg.chat.id);
-		return;
-	}
-
 	if(includes.inAnObject(msg.chat.id, connections) == true) {
 		bot.sendMessage(msg.chat.id, _msg._already_in_chat);
 		return;
 	}
+
+    if(includes.inAnObject(msg.chat.id, genders) == true) {
+        findPartner(msg.chat.id);
+        return;
+    }
 
 	var keyboardStr = JSON.stringify({
 			inline_keyboard: [
@@ -47,24 +47,26 @@ bot.on("callback_query", function(callbackQuery) {
 })
 
 bot.on('message', function(msg, match) {
-	if((msg.text).indexOf('/log') == 0){
-	console.log('msg.chat.id is ' + msg.chat.id);
-	console.log('femaleQ is ' + femaleQ);
-	console.log('makeQ is ' + maleQ);
-	console.log('connections is ' + JSON.stringify(connections));
-	console.log('genders is ' + JSON.stringify(genders));
-		return;
-	}
-
-    if((msg.text).indexOf('/') == 0){
-        return;
-    }
-
 	var currentChatId = msg.chat.id;
-	if(connections[currentChatId] != undefined){
-		bot.sendMessage(connections[currentChatId], msg.text);
-	};
-});	
+    var partnerChatId = connections[currentChatId];
+
+    if(msg.text != undefined){
+        if((msg.text).indexOf('/log') == 0){
+            console.log('msg.chat.id is ' + msg.chat.id);
+            console.log('femaleQ is ' + femaleQ);
+            console.log('makeQ is ' + maleQ);
+            console.log('connections is ' + JSON.stringify(connections));
+            console.log('genders is ' + JSON.stringify(genders));
+            return;
+        }
+
+        if((msg.text).indexOf('/') == 0){
+            return;
+        }
+
+        bot.sendMessage(partnerChatId, msg.text);
+    }
+});
 
 
 bot.onText(/\/endChat/, function(msg, match) {
@@ -120,7 +122,9 @@ function findPartner(chatID){
 						"one_time_keyboard": true,
 						"keyboard": [[{
 								text: "/endChat"
-						}]]
+						},
+                            {text: "/start"}
+                        ]]
 				}
 		};
 
