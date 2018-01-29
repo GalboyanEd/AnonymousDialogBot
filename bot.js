@@ -1,5 +1,7 @@
 var TelegramBot = require('node-telegram-bot-api');
 var token = require('./config').token;
+var includes = require('./includes.js');
+var _msg = require('./messages.js')
 
 var maleQ = [];
 var femaleQ = [];
@@ -9,12 +11,15 @@ var genders = {};
 var bot = new TelegramBot(token, {polling: true});
 
 bot.onText(/\/start/, function(msg, match) {
-	if(genders[msg.chat.id] != undefined) {
+	if(includes.inAnObject(msg.chat.id, genders) == true) {
 		findPartner(msg.chat.id);
 		return;
 	}
 
-	var text = "What's your gender?";
+	if(includes.inAnObject(msg.chat.id, connections) == true) {
+		bot.sendMessage(msg.chat.id, _msg._already_in_chat);
+		return;
+	}
 
 	var keyboardStr = JSON.stringify({
 			inline_keyboard: [
@@ -26,12 +31,18 @@ bot.onText(/\/start/, function(msg, match) {
 	});
 
 	var keyboard = {reply_markup: JSON.parse(keyboardStr)};
-	bot.sendMessage(msg.chat.id, text, keyboard);
+	bot.sendMessage(msg.chat.id, _msg._gender_question, keyboard);
 });
 
 bot.on("callback_query", function(callbackQuery) {
-		var isMale = (callbackQuery.data == '_male') ? true : false;
-		genders[callbackQuery.message.chat.id] = isMale;
+    var isMale = (callbackQuery.data == '_male');
+    genders[callbackQuery.message.chat.id] = isMale;
+
+    if(includes.inAnArray(callbackQuery.message.chat.id, femaleQ) ||
+        includes.inAnArray(callbackQuery.message.chat.id, maleQ)){
+        bot.sendMessage(callbackQuery.message.chat.id, _msg._please_wait_in_queue);
+    }
+
 	findPartner(callbackQuery.message.chat.id);
 })
 
@@ -45,6 +56,10 @@ bot.on('message', function(msg, match) {
 		return;
 	}
 
+    if((msg.text).indexOf('/') == 0){
+        return;
+    }
+
 	var currentChatId = msg.chat.id;
 	if(connections[currentChatId] != undefined){
 		bot.sendMessage(connections[currentChatId], msg.text);
@@ -53,38 +68,33 @@ bot.on('message', function(msg, match) {
 
 
 bot.onText(/\/endChat/, function(msg, match) {
-	var currentChatId = msg.chat.id;
-	var partnerChatId = connections[currentChatId];
+    var currentChatId = msg.chat.id;
+    var partnerChatId = connections[currentChatId];
 
-	connections[currentChatId] = undefined;
-	connections[partnerChatId] = undefined;
+	if(includes.inAnObject(msg.chat.id, connections)){
+		connections[currentChatId] = undefined;
+		connections[partnerChatId] = undefined;
 
-	var _message = 'The chat is ended.';
+		bot.sendMessage(currentChatId, _msg._end_message);
+		bot.sendMessage(partnerChatId, _msg._end_message);
+	} else {
+		bot.sendMessage(currentChatId, _msg._no_current_chat + '\n' + _msg._start_message);
+		return;
+	}
 
-	bot.sendMessage(currentChatId, _message);
-	bot.sendMessage(partnerChatId, _message);
-
-	_message = 'Type /start to find a partner.';
-
-	bot.sendMessage(currentChatId, _message);
-	bot.sendMessage(partnerChatId, _message);
+	bot.sendMessage(currentChatId, _msg._start_message);
+	bot.sendMessage(partnerChatId, _msg._start_message);
 })
-
-function isInQueue(chatID, queue){
-	return !(queue.indexOf(chatID) == -1);
-}
 
 function findPartner(chatID){
 	isMale = genders[chatID];
 
-		var oppositeQ = isMale ? femaleQ : maleQ;
-		var currentQ	= isMale ? maleQ : femaleQ;
-
-		var _waitMessage = "Now there are no people we can connect you to. We'll inform you ASAP.";
+	var oppositeQ = isMale ? femaleQ : maleQ;
+	var currentQ	= isMale ? maleQ : femaleQ;
 
 	if(oppositeQ.length == 0){
 		currentQ.push(chatID);
-		bot.sendMessage(chatID,_waitMessage);
+		bot.sendMessage(chatID, _msg._please_wait_in_queue);
 		return;
 	}
 
@@ -92,14 +102,14 @@ function findPartner(chatID){
 	var partnerChatId = oppositeQ.shift();
 
 	if(currentChatId == partnerChatId){
-		bot.sendMessage(chatID,_waitMessage);
+		bot.sendMessage(chatID,_msg._please_wait_in_queue);
 		return;
 	}
 
 	connections[currentChatId] = partnerChatId;		
 	connections[partnerChatId] = currentChatId;		
 	
-	var _message = "We've found someone for you. Say hi to " + ((genders[partnerChatId]) ? 'him.' : 'her.');
+	var _message = _msg._found_someone + " Say hi to " + ((genders[partnerChatId]) ? 'him.' : 'her.');
 
 	bot.sendMessage(currentChatId, _message);
 	bot.sendMessage(partnerChatId, _message);
@@ -114,10 +124,8 @@ function findPartner(chatID){
 				}
 		};
 
-		_message = "Type /endChat to end this chat.";
-
-	bot.sendMessage(currentChatId, _message, option);
-	bot.sendMessage(partnerChatId, _message, option);
+	bot.sendMessage(currentChatId, _msg._end_chat, option);
+	bot.sendMessage(partnerChatId, _msg._end_chat, option);
 }
 
 bot.on('polling_error', function(error){
