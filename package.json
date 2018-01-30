@@ -2,7 +2,7 @@
   "name": "anonymous_dialog_bot",
   "version": "1.0.0",
   "description": "A bot that make you chat with unknown people.",
-  "main": "bot.js",
+  "main": "js/bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
