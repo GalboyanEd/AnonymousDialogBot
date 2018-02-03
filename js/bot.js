@@ -35,12 +35,15 @@ bot.onText(/\/start/, function(msg, match) {
 });
 
 bot.on("callback_query", function(callbackQuery) {
+	bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id);
+
     var isMale = (callbackQuery.data == '_male');
     genders[callbackQuery.message.chat.id] = isMale;
 
     if(includes.inAnArray(callbackQuery.message.chat.id, femaleQ) ||
         includes.inAnArray(callbackQuery.message.chat.id, maleQ)){
         bot.sendMessage(callbackQuery.message.chat.id, _msg._please_wait_in_queue);
+    	return;
     }
 
 	findPartner(callbackQuery.message.chat.id);
@@ -64,12 +67,51 @@ bot.on('message', function(msg, match) {
             return;
         }
 
+        if(partnerChatId === undefined)
+        	if(includes.inAnObject(msg.chat.id, genders)){
+        		bot.sendMessage(currentChatId, _msg._please_wait_in_queue);
+        		return;
+        	} else {
+        		bot.sendMessage(currentChatId, _msg._start_message);
+        		return;
+        	}
         bot.sendMessage(partnerChatId, msg.text);
     }
 });
 
+bot.on('sticker', function(msg) {
+    sendX('sticker', msg);
+});
 
-bot.onText(/\/endChat/, function(msg, match) {
+bot.on('audio', function(msg) {
+	sendX('audio', msg);
+});
+
+bot.on('document', function(msg) {
+    sendX('document', msg);
+});
+
+bot.on('photo', function(msg) {
+	sendX('photo', msg);
+});
+
+bot.on('video', function(msg) {
+    sendX('video', msg);
+});
+
+bot.on('voice', function(msg) {
+	sendX('voice', msg);
+});
+
+bot.on('contact', function(msg) {
+    sendX('contact', msg);
+});
+
+bot.on('location', function(msg) {
+	sendX('location', msg);
+});
+
+bot.onText(/\/endchat/, function(msg, match) {
     var currentChatId = msg.chat.id;
     var partnerChatId = connections[currentChatId];
 
@@ -95,7 +137,8 @@ function findPartner(chatID){
 	var currentQ	= isMale ? maleQ : femaleQ;
 
 	if(oppositeQ.length == 0){
-		currentQ.push(chatID);
+		if(includes.inAnArray(chatID, currentQ) == false) 
+			currentQ.push(chatID);
 		bot.sendMessage(chatID, _msg._please_wait_in_queue);
 		return;
 	}
@@ -111,26 +154,60 @@ function findPartner(chatID){
 	connections[currentChatId] = partnerChatId;		
 	connections[partnerChatId] = currentChatId;		
 	
-	var _message = _msg._found_someone + " Say hi to " + ((genders[partnerChatId]) ? 'him.' : 'her.');
+	var _message = _msg._found_someone + " Say hi to ";
 
-	bot.sendMessage(currentChatId, _message);
-	bot.sendMessage(partnerChatId, _message);
+	bot.sendMessage(currentChatId, _message + ((genders[partnerChatId]) ? 'him.' : 'her.'));
+	bot.sendMessage(partnerChatId, _message + ((genders[currentChatId]) ? 'him.' : 'her.'));
 
-	var option = {
-				"parse_mode": "Markdown",
-				"reply_markup": {
-						"one_time_keyboard": true,
-						"keyboard": [[
-							{text: "/start"},
-							{text: "/endChat"}
-                        ]]
-				}
-		};
-
-	bot.sendMessage(currentChatId, _msg._end_chat, option);
-	bot.sendMessage(partnerChatId, _msg._end_chat, option);
+	bot.sendMessage(currentChatId, _msg._end_chat);
+	bot.sendMessage(partnerChatId, _msg._end_chat);
 }
 
 bot.on('polling_error', function(error){
 	console.log(error);
 });
+
+function sendX(string, msg){
+    var currentChatId = msg.chat.id;
+    var partnerChatId = connections[currentChatId]; 
+
+ 	if(partnerChatId == undefined)
+    	if(includes.inAnObject(msg.chat.id, genders)){
+    		bot.sendMessage(currentChatId, _msg._please_wait_in_queue);
+    		return;
+    	} else {
+    		bot.sendMessage(currentChatId, _msg._start_message);
+    		return;
+    	}
+
+    switch(string){
+    	case 'text':
+			bot.sendMessage(partnerChatId, msg.text);
+			break;
+		case 'sticker':
+			bot.sendSticker(partnerChatId, msg.sticker.file_id);
+			break;
+		case 'audio':
+			bot.sendAudio(partnerChatId, msg.audio.file_id);
+			break;
+		case 'document':
+			bot.sendDocument(partnerChatId, msg.document.file_id);
+			break;
+		case 'photo':
+			bot.sendPhoto(partnerChatId, msg.photo[msg.photo.length - 1].file_id);
+			break;
+		case 'video':
+			bot.sendVideo(partnerChatId, msg.video.file_id);
+			break;
+		case 'voice':
+			bot.sendVoice(partnerChatId, msg.voice.file_id);
+			break;
+		case 'contact':
+			bot.sendContact(partnerChatId, msg.contact.phone_number, msg.contact.first_name);
+			break;
+		case 'location':
+			bot.sendLocation(partnerChatId, msg.location.latitude, msg.location.longitude);
+			break;
+    }
+
+}
