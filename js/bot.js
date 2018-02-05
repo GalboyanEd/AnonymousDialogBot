@@ -124,7 +124,6 @@ bot.onText(/\/export/, function(msg, match) {
 	fs.writeFileSync("./backup.json", JSON.stringify(_export));
 });
 
-
 bot.on('sticker', function(msg) {
     sendX('sticker', msg);
 });
@@ -240,7 +239,6 @@ function sendX(string, msg){
 			bot.sendDocument(partnerChatId, msg.document.file_id);
 			break;
 		case 'photo':
-			console.log("msg is " + JSON.stringify(msg));
 			bot.sendPhoto(partnerChatId, msg.photo[msg.photo.length - 1].file_id, {caption: msg.caption});
 			break;
 		case 'video':
@@ -256,7 +254,6 @@ function sendX(string, msg){
 			bot.sendLocation(partnerChatId, msg.location.latitude, msg.location.longitude);
 			break;
     }
-
 }
 
 // Array Remove - By John Resig (MIT Licensed)
