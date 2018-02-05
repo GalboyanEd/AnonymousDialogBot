@@ -1,6 +1,6 @@
 module.exports = {
 	_no_current_chat : 'You are not included in any chat.',
-	_already_in_chat : 'You already participate to a chat.\nType /endChat to end it.',
+	_already_in_chat : 'You already participate to a chat.\nType /endchat to end it.',
 	_start_message : 'Type /start to find a partner.',
 	_end_message : 'The chat is ended.',
 	_end_chat : 'Type /endchat to end this chat.',
