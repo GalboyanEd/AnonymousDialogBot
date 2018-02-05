@@ -1,12 +1,48 @@
 var TelegramBot = require('node-telegram-bot-api');
+var fs = require('fs');
+
 var token = require('./config').token;
 var includes = require('./includes.js');
 var _msg = require('./messages.js')
+
 
 var maleQ = [];
 var femaleQ = [];
 var connections = {};
 var genders = {};
+
+var filename = process.argv[2] ? process.argv[2] : './backup.json';
+fs.readFile(filename, function(err, data){
+	if(err){
+		console.error(err);
+		return;
+	}
+	
+	restore = JSON.parse(data)
+
+	if(restore == undefined){
+		console.error("Expected JSON");
+		return;
+	}
+
+	var _maleQ = restore["maleQ"];
+	var _femaleQ = restore["femaleQ"];
+	var _connections = restore["connections"];
+	var _genders = restore["genders"];
+
+	if((typeof _maleQ) === (typeof maleQ))
+		maleQ = _maleQ;
+
+	if((typeof _femaleQ) === (typeof femaleQ))
+		femaleQ = _femaleQ;
+
+	if((typeof _connections) === (typeof connections))
+		connections = _connections;
+
+	if((typeof _maleQ) === (typeof maleQ))
+		genders = _genders;
+});
+
 
 var bot = new TelegramBot(token, {polling: true});
 
@@ -56,10 +92,10 @@ bot.on('message', function(msg, match) {
     if(msg.text != undefined){
         if((msg.text).indexOf('/log') == 0){
             console.log('msg.chat.id is ' + msg.chat.id);
-            console.log('femaleQ is ' + femaleQ);
-            console.log('makeQ is ' + maleQ);
-            console.log('connections is ' + JSON.stringify(connections));
-            console.log('genders is ' + JSON.stringify(genders));
+            console.log('"femaleQ":' + femaleQ);
+            console.log('"maleQ":' + maleQ);
+            console.log('"connections": ' + JSON.stringify(connections));
+            console.log('"genders":' + JSON.stringify(genders));
             return;
         }
 
@@ -77,6 +113,15 @@ bot.on('message', function(msg, match) {
         	}
         bot.sendMessage(partnerChatId, msg.text);
     }
+});
+
+bot.onText(/\/export/, function(msg, match) {
+	var _export = {}
+	_export["connections"] = connections;
+	_export["genders"] = genders;
+	_export["maleQ"] = maleQ;
+	_export["femaleQ"] = femaleQ;
+	fs.writeFileSync("./backup.json", JSON.stringify(_export));
 });
 
 bot.on('sticker', function(msg) {
@@ -194,10 +239,10 @@ function sendX(string, msg){
 			bot.sendDocument(partnerChatId, msg.document.file_id);
 			break;
 		case 'photo':
-			bot.sendPhoto(partnerChatId, msg.photo[msg.photo.length - 1].file_id);
+			bot.sendPhoto(partnerChatId, msg.photo[msg.photo.length - 1].file_id, {caption: msg.caption});
 			break;
 		case 'video':
-			bot.sendVideo(partnerChatId, msg.video.file_id);
+			bot.sendVideo(partnerChatId, msg.video.file_id, {caption: msg.caption});
 			break;
 		case 'voice':
 			bot.sendVoice(partnerChatId, msg.voice.file_id);
@@ -209,5 +254,28 @@ function sendX(string, msg){
 			bot.sendLocation(partnerChatId, msg.location.latitude, msg.location.longitude);
 			break;
     }
-
 }
+
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+
+bot.onText(/\/changegender/, function(msg, match) {
+	if(genders[msg.chat.id] == undefined){
+		bot.sendMessage(msg.chat.id, _msg._no_gender + _msg._start_message);
+		return;
+	}
+
+	if(genders[msg.chat.id] == true)
+		maleQ.remove(maleQ.indexOf(msg.chat.id));
+	else 
+		femaleQ.remove(femaleQ.indexOf(msg.chat.id));
+
+	delete genders[msg.chat.id];
+	inConn = includes.inAnObject(msg.chat.id, connections);
+
+	bot.sendMessage(msg.chat.id, _msg._gender_changed + (inConn ? _msg._end_chat : _msg._start_message) );
+});
