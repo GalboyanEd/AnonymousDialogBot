@@ -259,7 +259,24 @@ function sendX(string, msg){
 
 }
 
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+
 bot.onText(/\/changegender/, function(msg, match) {
+	if(genders[msg.chat.id] == undefined){
+		bot.sendMessage(msg.chat.id, _msg._no_gender + _msg._start_message);
+		return;
+	}
+
+	if(genders[msg.chat.id] == true)
+		maleQ.remove(maleQ.indexOf(msg.chat.id));
+	else 
+		femaleQ.remove(femaleQ.indexOf(msg.chat.id));
+
 	delete genders[msg.chat.id];
 	inConn = includes.inAnObject(msg.chat.id, connections);
 
