@@ -1,12 +1,48 @@
 var TelegramBot = require('node-telegram-bot-api');
+var fs = require('fs');
+
 var token = require('./config').token;
 var includes = require('./includes.js');
 var _msg = require('./messages.js')
+
 
 var maleQ = [];
 var femaleQ = [];
 var connections = {};
 var genders = {};
+
+var filename = process.argv[2] ? process.argv[2] : './backup.json';
+fs.readFile(filename, function(err, data){
+	if(err){
+		console.error(err);
+		return;
+	}
+	
+	restore = JSON.parse(data)
+
+	if(restore == undefined){
+		console.error("Expected JSON");
+		return;
+	}
+
+	var _maleQ = restore["maleQ"];
+	var _femaleQ = restore["femaleQ"];
+	var _connections = restore["connections"];
+	var _genders = restore["genders"];
+
+	if((typeof _maleQ) === (typeof maleQ))
+		maleQ = _maleQ;
+
+	if((typeof _femaleQ) === (typeof femaleQ))
+		femaleQ = _femaleQ;
+
+	if((typeof _connections) === (typeof connections))
+		connections = _connections;
+
+	if((typeof _maleQ) === (typeof maleQ))
+		genders = _genders;
+});
+
 
 var bot = new TelegramBot(token, {polling: true});
 
@@ -56,10 +92,10 @@ bot.on('message', function(msg, match) {
     if(msg.text != undefined){
         if((msg.text).indexOf('/log') == 0){
             console.log('msg.chat.id is ' + msg.chat.id);
-            console.log('femaleQ is ' + femaleQ);
-            console.log('makeQ is ' + maleQ);
-            console.log('connections is ' + JSON.stringify(connections));
-            console.log('genders is ' + JSON.stringify(genders));
+            console.log('"femaleQ":' + femaleQ);
+            console.log('"maleQ":' + maleQ);
+            console.log('"connections": ' + JSON.stringify(connections));
+            console.log('"genders":' + JSON.stringify(genders));
             return;
         }
 
@@ -78,6 +114,16 @@ bot.on('message', function(msg, match) {
         bot.sendMessage(partnerChatId, msg.text);
     }
 });
+
+bot.onText(/\/export/, function(msg, match) {
+	var _export = {}
+	_export["connections"] = connections;
+	_export["genders"] = genders;
+	_export["maleQ"] = maleQ;
+	_export["femaleQ"] = femaleQ;
+	fs.writeFileSync("./backup.json", JSON.stringify(_export));
+});
+
 
 bot.on('sticker', function(msg) {
     sendX('sticker', msg);
@@ -214,15 +260,8 @@ function sendX(string, msg){
 }
 
 bot.onText(/\/changegender/, function(msg, match) {
-	var keyboardStr = JSON.stringify({
-			inline_keyboard: [
-				[
-					{text:'Male',callback_data:'_male'},
-					{text:'Female',callback_data:'_female'}
-				]
-			]
-	});
+	delete genders[msg.chat.id];
+	inConn = includes.inAnObject(msg.chat.id, connections);
 
-	var keyboard = {reply_markup: JSON.parse(keyboardStr)};
-	bot.sendMessage(msg.chat.id, _msg._gender_question, keyboard);
+	bot.sendMessage(msg.chat.id, _msg._gender_changed + (inConn ? _msg._end_chat : _msg._start_message) );
 });

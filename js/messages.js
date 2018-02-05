@@ -6,5 +6,6 @@ module.exports = {
 	_end_chat : 'Type /endChat to end this chat.',
 	_found_someone : "We've found someone for you",
 	_please_wait_in_queue : "Now there are no people we can connect you to. We'll inform you ASAP.",
-	_gender_question : "What's your gender?"
+	_gender_question : "What's your gender?",
+	_gender_changed : "We've forgotten your gender. Next time you'll be asked for it again."
 }
