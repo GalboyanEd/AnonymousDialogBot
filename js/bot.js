@@ -51,7 +51,7 @@ bot.onText(/\/start/, function(msg, match) {
 		bot.sendMessage(msg.chat.id, _msg._already_in_chat);
 		return;
 	}
-
+    console.log(msg.chat.id + ' is ' + msg.from.username);
     if(includes.inAnObject(msg.chat.id, genders) == true) {
         findPartner(msg.chat.id);
         return;
